@@ -1,0 +1,150 @@
+#!/usr/bin/env python
+
+import sys, os
+import pygtk, gtk, gobject
+import pygst
+pygst.require("0.10")
+import gst
+
+class GTK_Main:
+  def __init__(self):
+    self.timeout = None
+    self.jump_to = None
+    self.last_folder = None
+
+    window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+    window.set_title("Playbin Player")
+    window.set_default_size(300, -1)
+    window.connect("destroy", gtk.main_quit, "WM destroy")
+
+    vbox = gtk.VBox()
+    window.add(vbox)
+    
+    hbox = gtk.HBox()
+    vbox.add (hbox)
+    self.open_button = gtk.Button("Open")
+    self.open_button.connect("clicked", self.do_open)
+    hbox.pack_start(self.open_button, expand = False)
+    self.entry = gtk.Entry()
+    if len (sys.argv) > 1: self.entry.set_text (sys.argv [1])
+    hbox.add(self.entry)
+    self.start_button = gtk.Button("Start")
+    self.start_button.connect("clicked", self.start_stop)
+    hbox.pack_end(self.start_button, expand = False)
+
+    hbox = gtk.HBox()
+    vbox.add (hbox)
+    self.slow_button = gtk.Button("Slow")
+    self.slow_button.connect("clicked", self.slower)
+    hbox.pack_start(self.slow_button)
+    self.fast_button = gtk.Button("Fast")
+    self.fast_button.connect("clicked", self.faster)
+    hbox.add(self.fast_button)
+
+    hbox = gtk.HBox()
+    vbox.add (hbox)
+    self.backward_button = gtk.Button ("<")
+    self.backward_button.connect("clicked", self.backward)
+    hbox.pack_start(self.backward_button, expand = False)
+    self.pos_slider = gtk.HScale (gtk.Adjustment (0.0, 0.0, 101.5, 0.1, 1.0, 1.5))
+    self.pos_slider.set_update_policy(gtk.UPDATE_DISCONTINUOUS)
+    self.pos_slider.connect ("change-value", self.move_around1)
+    self.pos_slider.connect ("value-changed", self.move_around2)
+    hbox.add (self.pos_slider)
+    self.forward_button = gtk.Button (">")
+    self.forward_button.connect("clicked", self.forward)
+    hbox.pack_end(self.forward_button, expand = False)
+
+    window.show_all()
+
+    self.player = gst.element_factory_make("playbin2", "player")
+    bus = self.player.get_bus()
+    bus.add_signal_watch()
+    bus.connect("message", self.on_message)
+
+  def do_open(self, w):
+    chooser = gtk.FileChooserDialog(title = "Open", action = gtk.FILE_CHOOSER_ACTION_OPEN,
+                                    buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+    if (self.last_folder): chooser.set_current_folder (self.last_folder)
+    response = chooser.run ()
+    if response == gtk.RESPONSE_OK:
+      filepath = chooser.get_filename()
+      print "File %s" % (filepath)
+      self.entry.set_text (filepath)
+      self.last_folder = os.path.dirname(filepath)
+    chooser.destroy()
+
+  def update_ui (self):
+    if self.player.get_state() [1] == gst.STATE_PLAYING:
+      if self.duration is None:
+        self.duration = self.player.query_duration (gst.FORMAT_TIME, None) [0]
+        print "Duration %s" % (self.duration)
+      if self.jump_to is None:
+        pos = 100.0 * self.player.query_position (gst.FORMAT_TIME, None) [0] / self.duration
+        self.pos_slider.set_value (pos)
+    return True
+
+  def start_stop(self, w):
+    if self.start_button.get_label() == "Start":
+      filepath = self.entry.get_text()
+      if os.path.isfile(filepath):
+        self.start_button.set_label("Stop")
+        self.rate = 1
+        self.duration = None
+        self.player.set_property("uri", "file://" + filepath)
+        self.player.set_state(gst.STATE_PLAYING)
+        self.timeout = gobject.timeout_add_seconds (1, self.update_ui)
+    else:
+      self.start_button.set_label("Start")
+      if self.timeout: gobject.source_remove(self.timeout)
+      self.player.set_state(gst.STATE_NULL)
+
+  def change_rate(self, w, ratio):
+    self.rate = self.rate * ratio; print "Rate %s" % (self.rate)
+    pos_int = self.player.query_position(gst.FORMAT_TIME, None)[0]
+    self.player.seek (self.rate, gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH,
+                      gst.SEEK_TYPE_SET, pos_int,
+                      gst.SEEK_TYPE_NONE, -1)
+  def faster(self, w):
+    self.change_rate (w, 1.1)
+
+  def slower(self, w):
+    self.change_rate (w, 1.0 / 1.1)
+
+  def move_around1(self, w, *args):
+    self.jump_to = self.pos_slider.get_value ()
+
+  def move_around2(self, w, *args):
+    if self.jump_to:
+      #pos_int = self.player.query_position(gst.FORMAT_TIME, None)[0]
+      #print "Jump %s -> %s" % (pos_int, self.duration * self.jump_to / 100)
+      self.player.seek (self.rate, gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH,
+                        gst.SEEK_TYPE_SET, self.duration * self.jump_to / 100,
+                        gst.SEEK_TYPE_NONE, -1)
+      self.jump_to = None
+
+  def forward_backward(self, w, delta):
+    pos_int = self.player.query_position(gst.FORMAT_TIME, None)[0]
+    self.player.seek (self.rate, gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH,
+                      gst.SEEK_TYPE_SET, pos_int + delta,
+                      gst.SEEK_TYPE_NONE, -1)
+
+  def forward(self, w):
+    self.forward_backward(w, 5000000000)
+  def backward(self, w):
+    self.forward_backward(w, -5000000000)
+
+  def on_message(self, bus, message):
+    t = message.type
+    if t == gst.MESSAGE_EOS:
+      self.player.set_state(gst.STATE_NULL)
+      self.start_button.set_label("Start")
+    elif t == gst.MESSAGE_ERROR:
+      self.player.set_state(gst.STATE_NULL)
+      err, debug = message.parse_error()
+      print "Error: %s" % err, debug
+      self.start_button.set_label("Start")
+
+GTK_Main()
+gtk.gdk.threads_init()
+gtk.main()
