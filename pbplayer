@@ -7,10 +7,18 @@ pygst.require("0.10")
 import gst
 
 class GTK_Main:
+  def reset_params(self):
+    if self.timeout:
+      gobject.source_remove(self.timeout)
+      self.timeout = None
+    self.duration = None
+    self.jump_to = None
+    
   def __init__(self):
     self.timeout = None
-    self.jump_to = None
     self.last_folder = None
+    self.rate = 1.0
+    self.reset_params()
 
     window = gtk.Window(gtk.WINDOW_TOPLEVEL)
     window.set_title("Playbin Player")
@@ -34,19 +42,22 @@ class GTK_Main:
 
     hbox = gtk.HBox()
     vbox.add (hbox)
-    self.slow_button = gtk.Button("Slow")
+    self.slow_button = gtk.Button("Slower")
     self.slow_button.connect("clicked", self.slower)
     hbox.pack_start(self.slow_button)
-    self.fast_button = gtk.Button("Fast")
+    self.speed1_button = gtk.Button("1x")
+    self.speed1_button.connect("clicked", self.normal_speed)
+    hbox.add(self.speed1_button)
+    self.fast_button = gtk.Button("Faster")
     self.fast_button.connect("clicked", self.faster)
-    hbox.add(self.fast_button)
+    hbox.pack_end(self.fast_button)
 
     hbox = gtk.HBox()
     vbox.add (hbox)
     self.backward_button = gtk.Button ("<")
     self.backward_button.connect("clicked", self.backward)
     hbox.pack_start(self.backward_button, expand = False)
-    self.pos_slider = gtk.HScale (gtk.Adjustment (0.0, 0.0, 101.5, 0.1, 1.0, 1.5))
+    self.pos_slider = gtk.HScale (gtk.Adjustment (0.0, 0.0, 101.5, 0.5, 2.0, 1.5))
     self.pos_slider.set_update_policy(gtk.UPDATE_DISCONTINUOUS)
     self.pos_slider.connect ("change-value", self.move_around1)
     self.pos_slider.connect ("value-changed", self.move_around2)
@@ -85,31 +96,30 @@ class GTK_Main:
     return True
 
   def start_stop(self, w):
-    if self.start_button.get_label() == "Start":
+    if self.start_button.get_label() == "Start":  # start
       filepath = self.entry.get_text()
       if os.path.isfile(filepath):
         self.start_button.set_label("Stop")
-        self.rate = 1
-        self.duration = None
         self.player.set_property("uri", "file://" + filepath)
         self.player.set_state(gst.STATE_PLAYING)
         self.timeout = gobject.timeout_add_seconds (1, self.update_ui)
-    else:
+    else:  # stop
       self.start_button.set_label("Start")
-      if self.timeout: gobject.source_remove(self.timeout)
+      self.reset_params()
       self.player.set_state(gst.STATE_NULL)
 
-  def change_rate(self, w, ratio):
-    self.rate = self.rate * ratio; print "Rate %s" % (self.rate)
+  def change_rate(self, w, rate):
+    self.rate = rate; print "Rate %s" % (self.rate)
     pos_int = self.player.query_position(gst.FORMAT_TIME, None)[0]
     self.player.seek (self.rate, gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH,
                       gst.SEEK_TYPE_SET, pos_int,
                       gst.SEEK_TYPE_NONE, -1)
   def faster(self, w):
-    self.change_rate (w, 1.1)
-
+    self.change_rate (w, self.rate * 1.1)
   def slower(self, w):
-    self.change_rate (w, 1.0 / 1.1)
+    self.change_rate (w, self.rate / 1.1)
+  def normal_speed(self, w):
+    self.change_rate (w, 1.0)
 
   def move_around1(self, w, *args):
     self.jump_to = self.pos_slider.get_value ()
