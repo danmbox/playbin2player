@@ -43,8 +43,8 @@ class GTK_Main:
     if len (sys.argv) > 1: self.entry.set_text (sys.argv [1])
     hbox.add(self.entry)
     self.start_button = gtk.Button("Start")
-    self.start_button.connect("clicked", self.start_stop)
-    hbox.pack_end(self.start_button, expand = False)
+    self.start_button.connect("clicked", self.on_play)
+    hbox.add(self.start_button)
 
     hbox = gtk.HBox()
     vbox.add (hbox)
@@ -60,17 +60,17 @@ class GTK_Main:
 
     hbox = gtk.HBox()
     vbox.add (hbox)
-    self.backward_button = gtk.Button ("<")
-    self.backward_button.connect("clicked", self.backward)
-    hbox.pack_start(self.backward_button, expand = False)
+    self.on_backward_button = gtk.Button ("<<")
+    self.on_backward_button.connect("clicked", self.on_backward)
+    hbox.pack_start(self.on_backward_button, expand = False)
     self.pos_slider = gtk.HScale (gtk.Adjustment (0.0, 0.0, 101.5, 0.5, 2.0, 1.5))
     self.pos_slider.set_update_policy(gtk.UPDATE_DISCONTINUOUS)
-    self.pos_slider.connect ("change-value", self.move_around1)
-    self.pos_slider.connect ("value-changed", self.move_around2)
+    self.pos_slider.connect ("change-value", self.on_change_position1)
+    self.pos_slider.connect ("value-changed", self.on_change_position2)
     hbox.add (self.pos_slider)
-    self.forward_button = gtk.Button (">")
-    self.forward_button.connect("clicked", self.forward)
-    hbox.pack_end(self.forward_button, expand = False)
+    self.on_forward_button = gtk.Button (">>")
+    self.on_forward_button.connect("clicked", self.on_forward)
+    hbox.pack_end(self.on_forward_button, expand = False)
 
     self.movie_window.connect("button_press_event", self.on_movie_clicked)
     self.movie_window.set_events(gtk.gdk.BUTTON_PRESS_MASK)
@@ -105,7 +105,7 @@ class GTK_Main:
         self.pos_slider.set_value (pos)
     return True
 
-  def start_stop(self, w):
+  def on_play(self, w):
     if self.start_button.get_label() == "Start":  # start
       filepath = self.entry.get_text()
       if os.path.isfile(filepath):
@@ -115,10 +115,10 @@ class GTK_Main:
         self.player.set_state(gst.STATE_PLAYING)
         self.timeout = gobject.timeout_add_seconds (1, self.update_ui)
     else:  # stop
-      self.toggle_controls (True)
-      self.start_button.set_label("Start")
-      self.reset_params()
       self.player.set_state(gst.STATE_NULL)
+      self.start_button.set_label("Start")
+      self.toggle_controls (True)
+      self.reset_params()
 
   def change_rate(self, w, rate):
     self.rate = rate; print "Rate %s" % (self.rate)
@@ -133,10 +133,10 @@ class GTK_Main:
   def normal_speed(self, w):
     self.change_rate (w, 1.0)
 
-  def move_around1(self, w, *args):
+  def on_change_position1(self, w, *args):
     self.jump_to = self.pos_slider.get_value ()
 
-  def move_around2(self, w, *args):
+  def on_change_position2(self, w, *args):
     if self.jump_to:
       #pos_int = self.player.query_position(gst.FORMAT_TIME, None)[0]
       #print "Jump %s -> %s" % (pos_int, self.duration * self.jump_to / 100)
@@ -151,9 +151,9 @@ class GTK_Main:
                       gst.SEEK_TYPE_SET, pos_int + delta,
                       gst.SEEK_TYPE_NONE, -1)
 
-  def forward(self, w):
+  def on_forward(self, w):
     self.forward_backward(w, 5000000000)
-  def backward(self, w):
+  def on_backward(self, w):
     self.forward_backward(w, -5000000000)
 
   def toggle_controls(self, make_visible = None):
@@ -172,13 +172,11 @@ class GTK_Main:
   def on_message(self, bus, message):
     t = message.type
     if t == gst.MESSAGE_EOS:
-      self.player.set_state(gst.STATE_NULL)
-      self.start_button.set_label("Start")
+      self.on_play ()
     elif t == gst.MESSAGE_ERROR:
-      self.player.set_state(gst.STATE_NULL)
       err, debug = message.parse_error()
       print "Error: %s" % err, debug
-      self.start_button.set_label("Start")
+      self.on_play ()
 
   def on_sync_message(self, bus, message):
     if message.structure is None: return
