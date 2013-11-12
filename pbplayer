@@ -21,18 +21,19 @@ class GTK_Main:
     elif state == "PLAY":
       self.play_button.set_label("||")
       self.toggle_controls (False)
-      self.player.set_state(gst.STATE_PAUSED)
+      self.player.set_state(gst.STATE_PAUSED if self.app_state == "STOP" else gst.STATE_PLAYING)
     elif state == "PAUSE":
       self.play_button.set_label(">")
       self.toggle_controls (True)
       self.player.set_state(gst.STATE_PAUSED)
     self.app_state = state
     print self.app_state
-      
+
   def __init__(self):
     self.timeout = None
     self.last_folder = None
     self.rate = 1.0
+    self.playlist = []; self.playlist_idx = -1
 
     window = gtk.Window(gtk.WINDOW_TOPLEVEL)
     self.window = window
@@ -44,32 +45,35 @@ class GTK_Main:
     window.add(vbox)
     self.control_panel = gtk.VBox ()
     self.movie_window = gtk.DrawingArea()
-    vbox.pack_start (self.control_panel, expand = False)
-    vbox.pack_end (self.movie_window, expand = True)
+    vbox.add_with_properties(self.control_panel, "expand", False)
+    vbox.add_with_properties(self.movie_window, "expand", True)
     vbox = self.control_panel
-    
+
     hbox = gtk.HBox()
     vbox.add (hbox)
+    self.prev_button = gtk.Button("<<")
+    self.prev_button.connect("clicked", self.on_prev)
+    hbox.add_with_properties(self.prev_button, "expand", False)
+    self.entry = gtk.Entry()
+    hbox.add(self.entry)
     self.open_button = gtk.Button("Open")
     self.open_button.connect("clicked", self.do_open)
-    hbox.pack_start(self.open_button, expand = False)
-    self.entry = gtk.Entry()
-    if len (sys.argv) > 1:
-      self.entry.set_text (sys.argv [1])
-      (self.last_folder, _) = os.path.split (sys.argv [1])
-    hbox.add(self.entry)
+    hbox.add_with_properties(self.open_button, "expand", False)
     self.play_button = gtk.Button(">")
     self.play_button.connect("clicked", self.on_play)
     hbox.add_with_properties(self.play_button, "expand", False)
     self.stop_button = gtk.Button("Stop")
     self.stop_button.connect("clicked", self.on_stop)
     hbox.add_with_properties(self.stop_button, "expand", False)
+    self.next_button = gtk.Button(">>")
+    self.next_button.connect("clicked", self.on_next)
+    hbox.add_with_properties(self.next_button, "expand", False)
 
     hbox = gtk.HBox()
     vbox.add (hbox)
     self.slow_button = gtk.Button("Slower")
     self.slow_button.connect("clicked", self.slower)
-    hbox.pack_start(self.slow_button)
+    hbox.add_with_properties(self.slow_button)
     self.speed1_button = gtk.Button("1x")
     self.speed1_button.connect("clicked", self.normal_speed)
     hbox.add(self.speed1_button)
@@ -79,17 +83,17 @@ class GTK_Main:
 
     hbox = gtk.HBox()
     vbox.add (hbox)
-    self.on_backward_button = gtk.Button ("<<")
+    self.on_backward_button = gtk.Button ("<-")
     self.on_backward_button.connect("clicked", self.on_backward)
-    hbox.pack_start(self.on_backward_button, expand = False)
+    hbox.add_with_properties(self.on_backward_button, "expand", False)
     self.pos_slider = gtk.HScale (gtk.Adjustment (0.0, 0.0, 101.5, 0.5, 2.0, 1.5))
     self.pos_slider.set_update_policy(gtk.UPDATE_DISCONTINUOUS)
     self.pos_slider.connect ("change-value", self.on_change_position1)
     self.pos_slider.connect ("value-changed", self.on_change_position2)
     hbox.add (self.pos_slider)
-    self.on_forward_button = gtk.Button (">>")
+    self.on_forward_button = gtk.Button ("->")
     self.on_forward_button.connect("clicked", self.on_forward)
-    hbox.pack_end(self.on_forward_button, expand = False)
+    hbox.add_with_properties(self.on_forward_button, "expand", False)
 
     self.movie_window.connect("button_press_event", self.on_movie_clicked)
     self.movie_window.set_events(gtk.gdk.BUTTON_PRESS_MASK)
@@ -103,29 +107,57 @@ class GTK_Main:
 
     self.set_app_state("STOP")
     window.show_all()
-    if (self.entry.get_text()): self.start_playbin()
-    
+    if len (sys.argv) > 1:
+      self.open_something(os.path.abspath (sys.argv [1]))
+
   def do_open(self, w):
     chooser = gtk.FileChooserDialog(title = "Open", action = gtk.FILE_CHOOSER_ACTION_OPEN,
                                     buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
     chooser.set_show_hidden (True)
     if (self.last_folder): chooser.set_current_folder (self.last_folder)
-    response = chooser.run ()
-    if response == gtk.RESPONSE_OK:
-      filepath = chooser.get_filename()
-      print "File %s" % (filepath)
-      self.entry.set_text (filepath)
-      self.last_folder = os.path.dirname(filepath)
-      self.start_playbin()
+    if chooser.run () == gtk.RESPONSE_OK:
+      self.open_something(chooser.get_filename())
     chooser.destroy()
+
+  def on_next(self, w):
+    if self.app_state != "STOP": self.set_app_state ("STOP")
+    if self.playlist_idx < len(self.playlist):
+      self.playlist_idx = self.playlist_idx + 1
+      self.open_file(self.playlist [self.playlist_idx])
+  def on_prev(self, w):
+    if self.app_state != "STOP": self.set_app_state ("STOP")
+    if self.playlist_idx > 0:
+      self.playlist_idx = self.playlist_idx - 1
+      self.open_file(self.playlist [self.playlist_idx])
+
+  def open_something(self, filepath):
+      if filepath [-4:] == ".m3u":
+        self.open_playlist(filepath)
+      else:
+        self.open_file(filepath)
+        
+  def open_file(self, filepath = None):
+    if filepath:
+      self.entry.set_text (filepath)
+    else:
+      filepath = self.entry.get_text()
+    print "File %s" % (filepath)
+    self.last_folder = os.path.dirname(filepath)
+    self.start_playbin(filepath)
     
-  def start_playbin(self):
-    filepath = self.entry.get_text()
-    if os.path.isfile(filepath):
-      self.player.set_property("uri", "file://" + filepath)
-      self.timeout = gobject.timeout_add_seconds (1, self.update_ui)
-      self.player.set_state(gst.STATE_PAUSED)
-      self.set_app_state("PLAY")
+  def open_playlist(self, filepath):
+    (pl_dir, _) = os.path.split (filepath)
+    with open (filepath) as fpl:
+      self.playlist = list (os.path.join (pl_dir, fn.rstrip ("\n")) for fn in fpl)
+    self.playlist_idx = -1
+    self.on_next(None)
+
+  def start_playbin(self, filepath):
+    if os.path.isfile(filepath): filepath = "file://" + filepath
+    self.player.set_property("uri", filepath)
+    self.timeout = gobject.timeout_add_seconds (1, self.update_ui)
+    self.player.set_state(gst.STATE_PAUSED)
+    self.set_app_state("PLAY")
 
   def update_ui (self):
     if self.player.get_state() [1] == gst.STATE_PLAYING:
@@ -137,8 +169,8 @@ class GTK_Main:
   def on_play(self, w):
     if self.app_state == "PAUSE":  # unpause
       self.set_app_state("PLAY")
-    elif self.app_state == "STOP":  # start
-      self.start_playbin()
+    elif self.app_state == "STOP":  # start (again)
+      self.open_file()
       self.set_app_state("PLAY")
     else:  # pause
       self.set_app_state("PAUSE")
@@ -192,10 +224,10 @@ class GTK_Main:
     else:
       self.control_panel.hide()
       self.window.fullscreen()
-      
+
   def on_movie_clicked(self, w, e):
     self.toggle_controls()
-  
+
   def on_message(self, bus, message):
     t = message.type
     if t == gst.MESSAGE_ASYNC_DONE:
