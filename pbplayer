@@ -7,18 +7,32 @@ pygst.require("0.10")
 import gst
 
 class GTK_Main:
-  def reset_params(self):
-    if self.timeout:
-      gobject.source_remove(self.timeout)
-      self.timeout = None
-    self.duration = None
-    self.jump_to = None
-    
+  def set_app_state(self, state):
+    if state == "STOP":
+      if self.timeout:
+        gobject.source_remove(self.timeout)
+        self.timeout = None
+      self.duration = None
+      self.jump_to = None
+      self.play_button.set_label(">")
+      self.toggle_controls (True)
+      self.pos_slider.set_value (0)
+      self.player.set_state(gst.STATE_NULL)
+    elif state == "PLAY":
+      self.play_button.set_label("||")
+      self.toggle_controls (False)
+      self.player.set_state(gst.STATE_PLAYING)
+    elif state == "PAUSE":
+      self.play_button.set_label(">")
+      self.toggle_controls (True)
+      self.player.set_state(gst.STATE_PAUSED)
+    self.app_state = state
+    print self.app_state
+      
   def __init__(self):
     self.timeout = None
     self.last_folder = None
     self.rate = 1.0
-    self.reset_params()
 
     window = gtk.Window(gtk.WINDOW_TOPLEVEL)
     self.window = window
@@ -40,11 +54,16 @@ class GTK_Main:
     self.open_button.connect("clicked", self.do_open)
     hbox.pack_start(self.open_button, expand = False)
     self.entry = gtk.Entry()
-    if len (sys.argv) > 1: self.entry.set_text (sys.argv [1])
+    if len (sys.argv) > 1:
+      self.entry.set_text (sys.argv [1])
+      (self.last_folder, _) = os.path.split (sys.argv [1])
     hbox.add(self.entry)
-    self.start_button = gtk.Button("Start")
-    self.start_button.connect("clicked", self.on_play)
-    hbox.add(self.start_button)
+    self.play_button = gtk.Button(">")
+    self.play_button.connect("clicked", self.on_play)
+    hbox.add_with_properties(self.play_button, "expand", False)
+    self.stop_button = gtk.Button("Stop")
+    self.stop_button.connect("clicked", self.on_stop)
+    hbox.add_with_properties(self.stop_button, "expand", False)
 
     hbox = gtk.HBox()
     vbox.add (hbox)
@@ -74,7 +93,6 @@ class GTK_Main:
 
     self.movie_window.connect("button_press_event", self.on_movie_clicked)
     self.movie_window.set_events(gtk.gdk.BUTTON_PRESS_MASK)
-    window.show_all()
 
     self.player = gst.element_factory_make("playbin2", "player")
     bus = self.player.get_bus()
@@ -83,9 +101,14 @@ class GTK_Main:
     bus.enable_sync_message_emission()
     bus.connect("sync-message::element", self.on_sync_message)
 
+    self.set_app_state("STOP")
+    window.show_all()
+    if (self.entry.get_text()): self.start_playbin()
+    
   def do_open(self, w):
     chooser = gtk.FileChooserDialog(title = "Open", action = gtk.FILE_CHOOSER_ACTION_OPEN,
                                     buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+    chooser.set_show_hidden (True)
     if (self.last_folder): chooser.set_current_folder (self.last_folder)
     response = chooser.run ()
     if response == gtk.RESPONSE_OK:
@@ -93,7 +116,16 @@ class GTK_Main:
       print "File %s" % (filepath)
       self.entry.set_text (filepath)
       self.last_folder = os.path.dirname(filepath)
+      self.start_playbin()
     chooser.destroy()
+    
+  def start_playbin(self):
+    filepath = self.entry.get_text()
+    if os.path.isfile(filepath):
+      self.player.set_property("uri", "file://" + filepath)
+      self.timeout = gobject.timeout_add_seconds (1, self.update_ui)
+      self.player.set_state(gst.STATE_PAUSED)
+      self.set_app_state("PLAY")
 
   def update_ui (self):
     if self.player.get_state() [1] == gst.STATE_PLAYING:
@@ -106,19 +138,16 @@ class GTK_Main:
     return True
 
   def on_play(self, w):
-    if self.start_button.get_label() == "Start":  # start
-      filepath = self.entry.get_text()
-      if os.path.isfile(filepath):
-        self.toggle_controls (False)
-        self.start_button.set_label("Stop")
-        self.player.set_property("uri", "file://" + filepath)
-        self.player.set_state(gst.STATE_PLAYING)
-        self.timeout = gobject.timeout_add_seconds (1, self.update_ui)
-    else:  # stop
-      self.player.set_state(gst.STATE_NULL)
-      self.start_button.set_label("Start")
-      self.toggle_controls (True)
-      self.reset_params()
+    if self.app_state == "PAUSE":  # unpause
+      self.set_app_state("PLAY")
+    elif self.app_state == "STOP":  # start
+      self.start_playbin()
+      self.set_app_state("PLAY")
+    else:  # pause
+      self.set_app_state("PAUSE")
+
+  def on_stop(self, w):
+    self.set_app_state("STOP")
 
   def change_rate(self, w, rate):
     self.rate = rate; print "Rate %s" % (self.rate)
@@ -172,11 +201,11 @@ class GTK_Main:
   def on_message(self, bus, message):
     t = message.type
     if t == gst.MESSAGE_EOS:
-      self.on_play ()
+      self.set_app_state("STOP")
     elif t == gst.MESSAGE_ERROR:
       err, debug = message.parse_error()
       print "Error: %s" % err, debug
-      self.on_play ()
+      self.set_app_state("STOP")
 
   def on_sync_message(self, bus, message):
     if message.structure is None: return
