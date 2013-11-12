@@ -21,7 +21,7 @@ class GTK_Main:
     elif state == "PLAY":
       self.play_button.set_label("||")
       self.toggle_controls (False)
-      self.player.set_state(gst.STATE_PLAYING)
+      self.player.set_state(gst.STATE_PAUSED)
     elif state == "PAUSE":
       self.play_button.set_label(">")
       self.toggle_controls (True)
@@ -129,9 +129,6 @@ class GTK_Main:
 
   def update_ui (self):
     if self.player.get_state() [1] == gst.STATE_PLAYING:
-      if self.duration is None:
-        self.duration = self.player.query_duration (gst.FORMAT_TIME, None) [0]
-        print "Duration %s" % (self.duration)
       if self.jump_to is None:
         pos = 100.0 * self.player.query_position (gst.FORMAT_TIME, None) [0] / self.duration
         self.pos_slider.set_value (pos)
@@ -149,18 +146,19 @@ class GTK_Main:
   def on_stop(self, w):
     self.set_app_state("STOP")
 
-  def change_rate(self, w, rate):
+  def change_rate(self, rate, pos = None):
     self.rate = rate; print "Rate %s" % (self.rate)
-    pos_int = self.player.query_position(gst.FORMAT_TIME, None)[0]
+    if pos is None:
+      pos = self.player.query_position(gst.FORMAT_TIME, None)[0]
     self.player.seek (self.rate, gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH,
-                      gst.SEEK_TYPE_SET, pos_int,
+                      gst.SEEK_TYPE_SET, pos,
                       gst.SEEK_TYPE_NONE, -1)
   def faster(self, w):
-    self.change_rate (w, self.rate * 1.1)
+    self.change_rate (self.rate * 1.1)
   def slower(self, w):
-    self.change_rate (w, self.rate / 1.1)
+    self.change_rate (self.rate / 1.1)
   def normal_speed(self, w):
-    self.change_rate (w, 1.0)
+    self.change_rate (1.0)
 
   def on_change_position1(self, w, *args):
     self.jump_to = self.pos_slider.get_value ()
@@ -200,6 +198,13 @@ class GTK_Main:
   
   def on_message(self, bus, message):
     t = message.type
+    if t == gst.MESSAGE_ASYNC_DONE:
+      if self.app_state == "PLAY":
+        if self.duration is None:  # 1st time only
+          self.duration = self.player.query_duration (gst.FORMAT_TIME, None) [0]
+          print "Duration %s" % (self.duration)
+          self.change_rate (self.rate, pos = 0)
+          self.player.set_state (gst.STATE_PLAYING)
     if t == gst.MESSAGE_EOS:
       self.set_app_state("STOP")
     elif t == gst.MESSAGE_ERROR:
