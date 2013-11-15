@@ -4,17 +4,18 @@
 /Gstreamer-based video player with variable speed playback support/
 
   * Home page :: [[http://danmbox.github.com/playbin2player]]
+  * Source :: [[http://github.com/danmbox/playbin2player]]
   * Author :: [[http://alumnus.caltech.edu/~muresan/][Dan A. Muresan]] (danmbox at gmail dot com)
 
 
-* DESCRIPTION:
+* DESCRIPTION
 
   Playbin2 Player is a pure gstreamer-based video player with support for 
   faster / slower playback. As it works on Python 2.5, Maemo devices (e.g. 
   Nokia N900) can run it.
 
 
-* DEPENDENCIES:
+* DEPENDENCIES
 
   * gstreamer-0.10 and PyGST
 
@@ -23,7 +24,7 @@
   * Python 2.5+
 
 
-* INSTALLING:
+* INSTALLING
 
   No installation required (and no setup script provided); download repository to 
   preferred destination:
@@ -36,7 +37,7 @@
   Run =/path/to/playbin2player/pbplayer [ mediafile.ext | playlist.m3u ]=
 
 
-* COPYRIGHT:
+* COPYRIGHT
 
   Copyright 2013 Dan A. Muresan
 
