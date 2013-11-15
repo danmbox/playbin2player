@@ -2,10 +2,16 @@
 
 from __future__ import with_statement
 
+from optparse import OptionParser
+
+option_parser = OptionParser(description = "GStreamer-based player with variable-speed playback support",
+                             usage = "%prog [options] [ mediafile.ext | playlist.m3u ]", version = "%prog 1.0")
+(prog_options, prog_args) = option_parser.parse_args()
+
 import sys, os
 import pygtk, gtk, gobject
-import pygst
-pygst.require("0.10")
+
+import pygst; pygst.require("0.10")
 import gst
 
 class GTK_Main:
@@ -31,7 +37,7 @@ class GTK_Main:
     self.app_state = state
     print self.app_state
 
-  def __init__(self):
+  def __init__(self, options, args):
     self.timeout = None
     self.last_folder = None
     self.rate = 1.0
@@ -109,8 +115,9 @@ class GTK_Main:
 
     self.set_app_state("STOP")
     window.show_all()
-    if len (sys.argv) > 1:
-      self.open_something(os.path.abspath (sys.argv [1]))
+    print args
+    if len (args) > 0:
+      self.open_something(os.path.abspath (args [0]))
 
   def do_open(self, w):
     chooser = gtk.FileChooserDialog(title = "Open", action = gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -256,6 +263,6 @@ class GTK_Main:
       imagesink.set_xwindow_id(self.movie_window.window.xid)
       gtk.gdk.threads_leave()
 
-GTK_Main()
+GTK_Main(prog_options, prog_args)
 gtk.gdk.threads_init()
 gtk.main()
