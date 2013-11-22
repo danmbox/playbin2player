@@ -73,6 +73,17 @@ class GTK_Main:
     self.stop_button = gtk.Button("Stop")
     self.stop_button.connect("clicked", self.on_stop)
     hbox.add_with_properties(self.stop_button, "expand", False)
+    
+    self.iofn_hbox = gtk.HBox()
+    self.iofn_hbox.hide ()
+    hbox.add_with_properties(self.iofn_hbox, "expand", False)
+    self.iofn_spin = gtk.SpinButton (gtk.Adjustment (1, 1, 10000, 1, 5, 0), 0, 0)
+    self.iofn_spin.set_wrap (True)
+    self.iofn_spin.connect ("value-changed", self.on_iofn_changed)
+    self.iofn_hbox.add_with_properties(self.iofn_spin, "expand", False)
+    self.ofn_label = gtk.Label ()
+    self.iofn_hbox.add_with_properties(self.ofn_label)
+    
     self.next_button = gtk.Button(">>")
     self.next_button.connect("clicked", self.on_next)
     hbox.add_with_properties(self.next_button, "expand", False)
@@ -128,21 +139,36 @@ class GTK_Main:
       self.open_something(chooser.get_filename())
     chooser.destroy()
 
+  def get_iofn_pl_pos(self):
+    return int (self.iofn_spin.get_value ()) - 1
   def on_next(self, w):
     if self.app_state != "STOP": self.set_app_state ("STOP")
     if self.playlist_idx < len(self.playlist):
       self.playlist_idx = self.playlist_idx + 1
+      if self.playlist_idx != self.get_iofn_pl_pos():
+        self.iofn_spin.set_value (self.playlist_idx + 1)
       self.open_file(self.playlist [self.playlist_idx])
   def on_prev(self, w):
     if self.app_state != "STOP": self.set_app_state ("STOP")
     if self.playlist_idx > 0:
       self.playlist_idx = self.playlist_idx - 1
+      if self.playlist_idx != self.get_iofn_pl_pos():
+        self.iofn_spin.set_value (self.playlist_idx + 1)
       self.open_file(self.playlist [self.playlist_idx])
+  def on_iofn_changed(self, w, *args):
+    i = self.get_iofn_pl_pos()
+    print "Spun to %d" % i
+    if i != self.playlist_idx:
+      if self.app_state != "STOP": self.set_app_state ("STOP")
+      self.playlist_idx = i
+      self.open_file(self.playlist [self.playlist_idx])
+    return True
 
   def open_something(self, filepath):
       if filepath [-4:] == ".m3u":
         self.open_playlist(filepath)
       else:
+        self.iofn_hbox.hide ()
         self.open_file(filepath)
         
   def open_file(self, filepath = None):
@@ -158,6 +184,10 @@ class GTK_Main:
     (pl_dir, _) = os.path.split (filepath)
     with open (filepath) as fpl:
       self.playlist = list (os.path.join (pl_dir, fn.rstrip ("\n")) for fn in fpl)
+    self.last_folder = os.path.dirname(filepath)
+    self.ofn_label.set_text ("of " + str (len (self.playlist)))
+    self.iofn_spin.set_range (1, len (self.playlist))
+    self.iofn_hbox.show ()
     self.playlist_idx = -1
     self.on_next(None)
 
