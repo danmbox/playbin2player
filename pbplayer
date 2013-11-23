@@ -142,6 +142,7 @@ class GTK_Main:
   def get_iofn_pl_pos(self):
     return int (self.iofn_spin.get_value ()) - 1
   def on_next(self, w):
+    if len (self.playlist) == 0: return
     if self.app_state != "STOP": self.set_app_state ("STOP")
     if self.playlist_idx < len(self.playlist) - 1:
       self.playlist_idx = self.playlist_idx + 1
@@ -149,6 +150,7 @@ class GTK_Main:
         self.iofn_spin.set_value (self.playlist_idx + 1)
       self.open_file(self.playlist [self.playlist_idx])
   def on_prev(self, w):
+    if len (self.playlist) == 0: return
     if self.app_state != "STOP": self.set_app_state ("STOP")
     if self.playlist_idx > 1:
       self.playlist_idx = self.playlist_idx - 1
