@@ -237,7 +237,7 @@ class GTK_Main:
     self.jump_to = self.pos_slider.get_value ()
 
   def on_change_position2(self, w, *args):
-    if self.jump_to:
+    if self.jump_to is not None:
       #pos_int = self.player.query_position(gst.FORMAT_TIME, None)[0]
       #print "Jump %s -> %s" % (pos_int, self.duration * self.jump_to / 100)
       self.player.seek (self.rate, gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH,
