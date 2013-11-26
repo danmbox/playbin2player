@@ -1,0 +1,7 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=@RELEASE@
+Type=Application
+Name=Playbin2 Player
+Categories=AudioVideo;Player;Video;
+Exec=@bindir@/@PLAYER@
