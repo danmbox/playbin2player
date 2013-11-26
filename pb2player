@@ -5,7 +5,7 @@ from __future__ import with_statement
 from optparse import OptionParser
 
 option_parser = OptionParser(description = "GStreamer-based player with variable-speed playback support",
-                             usage = "%prog [options] [ mediafile.ext | playlist.m3u ]", version = "%prog 1.0")
+                             usage = "%prog [options] [ mediafile.ext | playlist.m3u ]", version = "%prog 1.0.1")
 (prog_options, prog_args) = option_parser.parse_args()
 
 import sys, os

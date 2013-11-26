@@ -35,7 +35,7 @@
 
 * RUNNING
 
-  Run =/path/to/playbin2player/pbplayer [ mediafile.ext | playlist.m3u ]=
+  Run =/path/to/playbin2player/pb2player [ mediafile.ext | playlist.m3u ]=
 
 
 * COPYRIGHT
