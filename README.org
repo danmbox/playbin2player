@@ -26,17 +26,20 @@
 
 * INSTALLING
 
-  No installation is required (and no setup script is provided); download and unpack a
-  [[https://github.com/danmbox/playbin2player/releases][release]]
+  Download and unpack a [[https://github.com/danmbox/playbin2player/releases][release]]
   to your preferred destination, or use git:
 
   =git clone git://github.com/danmbox/playbin2player.git=
 
+  Run =make install=, or, on Debian, =make debuild= (then install the
+  =.deb= from =/tmp=); or if you want to run =pb2player= directly from
+  the source folder, no installation is required.
 
 * RUNNING
 
-  Run =/path/to/playbin2player/pb2player [ mediafile.ext | playlist.m3u ]=
+  Run =pb2player [ mediafile.ext | playlist.m3u ]=
 
+  The player accepts only m3u playlists.
 
 * COPYRIGHT
 
