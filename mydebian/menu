@@ -1,0 +1,2 @@
+?package(playbin2player):needs="X11" section="Applications/Video"\
+  title="playbin2player" command="/usr/bin/pb2player"
