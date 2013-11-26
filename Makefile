@@ -46,6 +46,13 @@ showvars:
 man:
 	mkdir man
 
+debuild:
+	TMPDIR="/tmp/$(MYNAME)_$(RELEASE).orig"; \
+	  rm -rf "$$TMPDIR"; cp -a . "$$TMPDIR"; cd "$$TMPDIR"; \
+	  make clean; rm -rf debian; \
+	  cd ..; tar cvzf "$$TMPDIR.tar.gz" "$${TMPDIR##*/}"; \
+	  cd "$$TMPDIR"; cp -a mydebian debian; debuild -S; debuild -b
+
 installdirs: mkinstalldirs
 	./mkinstalldirs $(DESTDIR)$(bindir) $(DESTDIR)$(datadir) \
 	  $(DESTDIR)$(mandir) $(DESTDIR)$(man1dir) $(DESTDIR)$(datadir)/applications \
