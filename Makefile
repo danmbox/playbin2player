@@ -26,7 +26,7 @@ man/%.1: % $(filter-out $(wildcard man), man) Makefile
 install: all installdirs
 	$(INSTALL_PROGRAM) $(PROGS) $(DESTDIR)$(bindir)
 	$(INSTALL_DATA) $(MANS) $(DESTDIR)$(man1dir)
-	$(INSTALL_DATA) $(DESKTOPS) $(DESTDIR)$(datadir)/applications
+	$(INSTALL_DATA) $(DESKTOPS) $(DESTDIR)$(desktopdir)
 	$(INSTALL_DATA) LICENSE.txt $(DESTDIR)$(docdir)
 	$(INSTALL_DATA) README.org $(DESTDIR)$(docdir)
 	$(INSTALL_DATA) README.html $(DESTDIR)$(docdir)
@@ -55,5 +55,5 @@ debuild:
 
 installdirs: mkinstalldirs
 	./mkinstalldirs $(DESTDIR)$(bindir) $(DESTDIR)$(datadir) \
-	  $(DESTDIR)$(mandir) $(DESTDIR)$(man1dir) $(DESTDIR)$(datadir)/applications \
+	  $(DESTDIR)$(mandir) $(DESTDIR)$(man1dir) $(DESTDIR)$(desktopdir) \
 	  $(DESTDIR)$(docdir)

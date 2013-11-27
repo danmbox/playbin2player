@@ -14,6 +14,8 @@ datadir     = $(datarootdir)
 mandir      = $(datarootdir)/man
 docdir      = $(datarootdir)/doc/$(MYNAME)
 man1dir     = $(mandir)/man1
+# not from GNU coding standards
+desktopdir  = $(datadir)/applications
 
 INSTALL         = install
 INSTALL_PROGRAM = $(INSTALL)
