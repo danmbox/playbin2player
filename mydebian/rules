@@ -9,8 +9,10 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+PREFIX=/usr
+
 %:
-	dh $@ 
+	dh $@
 
 override_dh_auto_configure:
-	sed -i 's!^\(prefix\s*=\).*!\1 /usr!' local.mk
+	sed -i 's!^\(prefix\s*=\).*!\1 '"$(PREFIX)"'!' local.mk
