@@ -150,6 +150,12 @@ class GTK_Main(CallbackDict):
     self.call_callbacks("iofn_changed", i)
     return True
 
+  def set_fname_entry(self, text):
+    def cb():
+      self.fname_entry.set_text(text)
+      return False
+    gobject.idle_add(cb)
+    
   def update_ui (self, pos):
     if self.jump_to is None:
       self.pos_slider.set_value (pos)

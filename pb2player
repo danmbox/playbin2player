@@ -167,6 +167,7 @@ class PB2Player:
       self.set_app_state("PLAY")
     elif self.model.player_state == "STOP":  # start (again)
       self.model.open_file(None)
+      self.ui.set_fname_entry(self.model.filepath)
       self.set_app_state("PLAY")
     else:  # pause
       self.set_app_state("PAUSE")
@@ -184,12 +185,14 @@ class PB2Player:
     else:
       self.set_app_state("STOP")
       self.model.open_file(filepath)
+      self.ui.set_fname_entry(self.model.filepath)
       self.ui.playlist_mode(False)
       self.set_app_state("PLAY")
 
   def on_advance(self, delta):
     if self.model.playlist_jump(self.model.playlist_idx + delta):
       self.ui.set_iofn(self.model.playlist_idx + 1)
+      self.ui.set_fname_entry(self.model.filepath)
       self.set_app_state("PLAY")
 
   def on_destroy(self):
