@@ -132,8 +132,10 @@ class PB2Player:
 
   def on_model_state_changed(self, state, reason):
     print "player-state", state, reason
-    if state == "STOP" and reason != "ERR":
-      if len (self.model.playlist) > 0: self.on_advance(1)
+    if state == "STOP" and reason != "ERR" and len (self.model.playlist) > 0:
+      self.on_advance(1)
+    else:
+      self.set_app_state("STOP")
 
   def update_ui (self):
     if self.model.player.get_state() [1] == gst.STATE_PLAYING:
