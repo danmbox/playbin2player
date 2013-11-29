@@ -138,11 +138,11 @@ class GTK_Main(CallbackDict):
       self.iofn_hbox.hide()
 
   def set_iofn(self, i):
-    print "set_iofn", i
-    gtk.threads_enter()
-    if i != self.get_iofn_pl_pos():
-      self.iofn_spin.set_value (i)
-    gtk.threads_leave()
+    def cb():
+      if i != self.get_iofn_pl_pos():
+        self.iofn_spin.set_value (i)
+      return False
+    gobject.idle_add(cb)
   def get_iofn_pl_pos(self):
     return int (self.iofn_spin.get_value ())
   def on_iofn_changed(self, *args):
