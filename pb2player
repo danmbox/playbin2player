@@ -42,6 +42,9 @@ class PlayerModel(CallbackDict):
     self.player.set_property("uri", filepath)
     self.player.set_state(gst.STATE_PAUSED)
 
+  def load_file(self, filepath):
+    self.playlist = []; self.playlist_idx = -1
+    self.open_file(filepath)
   def load_playlist(self, filepath):
     (pl_dir, _) = os.path.split (filepath)
     with open (filepath) as fpl:
@@ -166,7 +169,7 @@ class PB2Player:
     if self.model.player_state == "PAUSE":  # unpause
       self.set_app_state("PLAY")
     elif self.model.player_state == "STOP":  # start (again)
-      self.model.open_file(None)
+      self.model.load_file(None)
       self.ui.set_fname_entry(self.model.filepath)
       self.set_app_state("PLAY")
     else:  # pause
@@ -184,7 +187,7 @@ class PB2Player:
       self.on_advance(1)
     else:
       self.set_app_state("STOP")
-      self.model.open_file(filepath)
+      self.model.load_file(filepath)
       self.ui.set_fname_entry(self.model.filepath)
       self.ui.playlist_mode(False)
       self.set_app_state("PLAY")
