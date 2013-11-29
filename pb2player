@@ -157,9 +157,9 @@ class PB2Player:
       self.set_app_state("PLAY")
 
   def on_faster(self):
-    self.model.change_rate (self.model.rate * 1.1)
+    self.model.change_rate (self.model.rate * 1.07)
   def on_slower(self):
-    self.model.change_rate (self.model.rate / 1.1)
+    self.model.change_rate (self.model.rate / 1.07)
   def on_normal_speed(self):
     self.model.change_rate (1.0)
   def on_forward(self):
