@@ -227,9 +227,9 @@ class GTK_Main:
                       gst.SEEK_TYPE_SET, pos,
                       gst.SEEK_TYPE_NONE, -1)
   def faster(self, w):
-    self.change_rate (self.rate * 1.1)
+    self.change_rate (self.rate * 1.07)
   def slower(self, w):
-    self.change_rate (self.rate / 1.1)
+    self.change_rate (self.rate / 1.07)
   def normal_speed(self, w):
     self.change_rate (1.0)
 
