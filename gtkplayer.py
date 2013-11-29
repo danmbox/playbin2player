@@ -7,11 +7,14 @@ from callback_dict import CallbackDict
 class GTK_Main(CallbackDict):
   def __init__(self):
     super(GTK_Main, self).__init__()
+    gtk.gdk.threads_init()
     self.init_ui()
 
   def run(self):
-    gtk.gdk.threads_init()
+    gtk.threads_enter()
     gtk.main()
+    gtk.threads_leave()
+    
   def quit(self):
     gtk.main_quit()
 
@@ -110,9 +113,9 @@ class GTK_Main(CallbackDict):
     self.iofn_hbox.hide ()
 
   def provide_movie_window_xid(self, setter):
-    gtk.gdk.threads_enter()
+    gtk.threads_enter()
     setter(self.movie_window.window.xid)
-    gtk.gdk.threads_leave()
+    gtk.threads_leave()
 
   def on_open(self, *args):
     chooser = gtk.FileChooserDialog(title = "Open", action = gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -133,11 +136,13 @@ class GTK_Main(CallbackDict):
       self.iofn_hbox.show ()
     else:
       self.iofn_hbox.hide()
+
   def set_iofn(self, i):
     print "set_iofn", i
+    gtk.threads_enter()
     if i != self.get_iofn_pl_pos():
       self.iofn_spin.set_value (i)
-
+    gtk.threads_leave()
   def get_iofn_pl_pos(self):
     return int (self.iofn_spin.get_value ())
   def on_iofn_changed(self, *args):
