@@ -280,7 +280,7 @@ class GTK_Main:
           self.player.set_state (gst.STATE_PLAYING)
     if t == gst.MESSAGE_EOS:
       self.set_app_state("STOP")
-      if len (self.playlist) > 0: self.on_next(None)
+      if len (self.playlist) > 0: gobject.idle_add(lambda *args: self.on_next(None) is "")
     elif t == gst.MESSAGE_ERROR:
       err, debug = message.parse_error()
       print "Error: %s" % err, debug
