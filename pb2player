@@ -32,6 +32,7 @@ class PlayerModel(CallbackDict):
     bus.connect("sync-message::element", self.on_sync_message)
 
   def open_file(self, filepath = None):
+    self.set_player_state("STOP")
     if filepath is None:
       filepath = self.filepath
     else:
@@ -170,7 +171,7 @@ class PB2Player:
   def on_stop(self):
     self.set_app_state("STOP")
 
-  def on_open(self):
+  def on_open(self, filepath):
     self.open_something(filepath)
   def open_something(self, filepath):
     if filepath [-4:] == ".m3u":
@@ -179,8 +180,9 @@ class PB2Player:
       self.ui.playlist_mode(True, n)
       self.on_advance(1)
     else:
+      self.set_app_state("STOP")
+      self.model.open_file(filepath)
       self.ui.playlist_mode(False)
-      self.open_file(filepath)
       self.set_app_state("PLAY")
 
   def on_advance(self, delta):
