@@ -22,6 +22,7 @@ class PlayerModel(CallbackDict):
     self.filepath = None
     self.rate = 1.0
     self.playlist = []; self.playlist_idx = -1
+    self.movie_window_xid = None
     self.player = gst.element_factory_make("playbin2", "player")
     self.player_state = None
     self.set_player_state("STOP")
@@ -31,6 +32,9 @@ class PlayerModel(CallbackDict):
     bus.enable_sync_message_emission()
     bus.connect("sync-message::element", self.on_sync_message)
 
+  def save_movie_window_xid(self, xid):
+    self.movie_window_xid = xid
+    
   def open_file(self, filepath = None):
     self.set_player_state("STOP")
     if filepath is None:
@@ -103,7 +107,7 @@ class PlayerModel(CallbackDict):
     if message_name == "prepare-xwindow-id":
       imagesink = message.src
       imagesink.set_property("force-aspect-ratio", True)
-      self.call_callbacks("set-player-xwindow-id", lambda(xid): imagesink.set_xwindow_id(xid))
+      imagesink.set_xwindow_id(self.movie_window_xid)
 
   def set_player_state(self, state):
     if self.player_state == state: return
@@ -124,9 +128,9 @@ class PB2Player:
     self.model = PlayerModel()
     self.model.add_callback("player-state", self.on_model_state_changed)
     self.ui = GTK_Main()
-    self.model.add_callback("set-player-xwindow-id", self.ui.provide_movie_window_xid)
     for m in "destroy,faster,slower,normal_speed,forward,backward,seek_percent,open,advance,iofn_changed,playpause,stop".split (","):
       self.ui.add_callback(m, getattr (self, "on_" + m))
+    self.ui.provide_movie_window_xid(self.model.save_movie_window_xid)
     if len (args) > 0:
       self.open_something(os.path.abspath (args [0]))
 
