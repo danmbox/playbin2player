@@ -45,7 +45,7 @@ class GTK_Main:
 
     window = gtk.Window(gtk.WINDOW_TOPLEVEL)
     self.window = window
-    window.set_title("Playbin Player")
+    window.set_title("Playbin2 Player")
     window.set_default_size(240, 240)
     window.connect("destroy", gtk.main_quit, "WM destroy")
 
