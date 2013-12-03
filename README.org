@@ -10,9 +10,12 @@
 
 * DESCRIPTION
 
-  [[http://danmbox.github.com/playbin2player][Playbin2 Player]] is a pure gstreamer-based video player with support for 
-  faster / slower playback. As it works on Python 2.5, Maemo devices (e.g. 
-  Nokia N900) can run it.
+  [[http://danmbox.github.com/playbin2player][Playbin2 Player]] is a
+  pure gstreamer-based video player with support for faster / slower
+  playback. It only requires Python 2.5, so Maemo devices (e.g.  Nokia
+  N900) can run it. Gstreamer playback is hardware-accelerated on
+  Maemo (as well as other mobile / embedded platforms), so pb2player
+  may have an advantage over other media players.
 
 
 * DEPENDENCIES
