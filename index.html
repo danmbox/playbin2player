@@ -3,7 +3,7 @@
 <html>
 <head>
 <title>Playbin2 Player</title>
-<!-- 2013-11-15 Fri 14:02 -->
+<!-- 2013-12-03 Tue 14:23 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8">
 <meta  name="generator" content="Org-mode">
 <meta  name="author" content="Dan Muresan">
@@ -153,9 +153,18 @@ for the JavaScript code in this tag.
 <h2 id="sec-1"><span class="section-number-2">1</span> DESCRIPTION</h2>
 <div class="outline-text-2" id="text-1">
 <p>
-<a href="http://danmbox.github.com/playbin2player">Playbin2 Player</a> is a pure gstreamer-based video player with support for 
-faster / slower playback. As it works on Python 2.5, Maemo devices (e.g. 
-Nokia N900) can run it.
+<a href="http://danmbox.github.com/playbin2player">Playbin2 Player</a> is a
+pure gstreamer-based video player with support for faster / slower
+playback. It only requires Python 2.5, so Maemo devices (e.g.  Nokia
+N900) can run it. Gstreamer playback is hardware-accelerated on
+Maemo (as well as other mobile / embedded platforms), so pb2player
+may have an advantage over other media players.
+</p>
+
+<p>
+This is the <b>development branch</b> of pb2player. The latest current
+stable release series is
+<a href="https://github.com/danmbox/playbin2player/tree/v1.0.x">v1.0.x</a>.
 </p>
 </div>
 </div>
@@ -180,9 +189,14 @@ Nokia N900) can run it.
 <h2 id="sec-3"><span class="section-number-2">3</span> INSTALLING</h2>
 <div class="outline-text-2" id="text-3">
 <p>
-No installation is required (and no setup script is provided); download and unpack a
-<a href="https://github.com/danmbox/playbin2player/releases">release</a>
-to your preferred destination, or use git:
+Download and unpack a
+<a href="https://github.com/danmbox/playbin2player/releases">release</a> to
+your preferred destination and follow the relevant README.
+</p>
+
+<p>
+For the development branch, download with <code>git</code>, then run
+<code>pb2player</code> directly from the source folder:
 </p>
 
 <p>
@@ -195,7 +209,11 @@ to your preferred destination, or use git:
 <h2 id="sec-4"><span class="section-number-2">4</span> RUNNING</h2>
 <div class="outline-text-2" id="text-4">
 <p>
-Run <code>/path/to/playbin2player/pbplayer [ mediafile.ext | playlist.m3u ]</code>
+Run <code>pb2player [ mediafile.ext | playlist.m3u ]</code>
+</p>
+
+<p>
+The player accepts only m3u playlists.
 </p>
 </div>
 </div>
