@@ -7,6 +7,7 @@ TMP_PAT  := $(subst *,%,$(TMP_WILD))
 
 PROGS := $(PLAYER)
 MANS := $(addprefix man/, $(PROGS:=.1))
+ICONS := $(wildcard data/icons/48x48/*.png)
 DESKTOPS_IN := $(wildcard data/*.desktop.in)
 DESKTOPS := $(DESKTOPS_IN:.in=)
 
@@ -14,19 +15,20 @@ CLEAN_FILES := $(MANS) $(DESKTOPS)
 
 .PHONY: clean all srcdist
 
-all: $(PROGS) $(MANS) $(DESKTOPS)
+all: $(PROGS) $(MANS) $(DESKTOPS) $(ICONS)
 	grep -q 'version = "%prog '"$(RELEASE)"'"' $(PLAYER)
 
 man/%.1: % $(filter-out $(wildcard man), man) Makefile
 	help2man -N -o $@ $(abspath $<) || { $< --help || :; $< --version || :; false; }
 
 %: %.in
-	sed -e 's!@RELEASE@!'"$(RELEASE)"'!g;s!@bindir@!'"$(bindir)"'!g;s!@PLAYER@!'"$(PLAYER)"'!g' <$< >$@
+	sed -e 's!@RELEASE@!'"$(RELEASE)"'!g;s!@bindir@!'"$(bindir)"'!g;s!@datadir@!'"$(datadir)"'!g;s!@PLAYER@!'"$(PLAYER)"'!g' <$< >$@
 
 install: all installdirs
 	$(INSTALL_PROGRAM) $(PROGS) $(DESTDIR)$(bindir)
 	$(INSTALL_DATA) $(MANS) $(DESTDIR)$(man1dir)
 	$(INSTALL_DATA) $(DESKTOPS) $(DESTDIR)$(desktopdir)
+	$(INSTALL_DATA) $(ICONS) $(DESTDIR)$(datadir)/icons/hicolor/48x48/apps
 	$(INSTALL_DATA) LICENSE.txt $(DESTDIR)$(docdir)
 	$(INSTALL_DATA) README.org $(DESTDIR)$(docdir)
 	$(INSTALL_DATA) README.html $(DESTDIR)$(docdir)
@@ -56,4 +58,6 @@ debuild:
 installdirs: mkinstalldirs
 	./mkinstalldirs $(DESTDIR)$(bindir) $(DESTDIR)$(datadir) \
 	  $(DESTDIR)$(mandir) $(DESTDIR)$(man1dir) $(DESTDIR)$(desktopdir) \
+	  $(DESTDIR)$(datadir)/icons/hicolor/32x32/apps \
+	  $(DESTDIR)$(datadir)/icons/hicolor/48x48/apps \
 	  $(DESTDIR)$(docdir)
